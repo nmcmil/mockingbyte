@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple ][ UI Designer</title>
+<style>
+  :root{ --bg:#0f1115; --panel:#171b21; --panel2:#222831; --line:#2c333d;
+    --txt:#e4e9ef; --dim:#828d9c; --accent:#5aa6ff; --accent2:#2a5e8c; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);
+    font:13px/1.45 ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+  body{display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:12px;padding:8px 14px;
+    border-bottom:1px solid var(--line);background:linear-gradient(#1b2027,#161a20);flex-wrap:wrap}
+  header h1{font-size:13px;margin:0;font-weight:700;letter-spacing:1.4px;color:#cdd6e2}
+  .spacer{flex:1}
+  select,button,input[type=text]{font:inherit;color:var(--txt);background:var(--panel2);
+    border:1px solid var(--line);border-radius:7px;padding:6px 10px;cursor:pointer;transition:.12s}
+  input[type=text]{cursor:text}
+  button:hover,select:hover{border-color:#46505d;background:#28303a}
+  button:active{transform:translateY(1px)}
+  button.sm{padding:5px 8px;font-size:12px}
+  button.primary{background:var(--accent2);border-color:#356da0}
+  button.primary:hover{background:#326492}
+  button.active{background:linear-gradient(#2f6dad,#285c92);border-color:var(--accent);color:#fff;
+    box-shadow:0 0 0 1px var(--accent) inset}
+  button:disabled{opacity:.35;cursor:default}
+  .designbar{display:flex;align-items:center;gap:6px}
+  .designbar label{color:var(--dim);font-size:12px}
+  #app{display:flex;flex:1;min-height:0}
+  aside{width:228px;flex:none;padding:12px 14px;overflow:auto;border-right:1px solid var(--line);
+    background:var(--panel)}
+  aside h2{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);
+    margin:16px 0 7px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+  aside h2:first-child{margin-top:0}
+  .tools{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .tools button{display:flex;justify-content:space-between;align-items:center;gap:4px}
+  .tools button .k{font:10px ui-monospace,monospace;color:var(--dim);
+    border:1px solid var(--line);border-radius:3px;padding:0 3px;line-height:14px}
+  .tools button.active .k{color:#bcd6f5;border-color:#3f7fc0}
+  .palette{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+  .sw{position:relative;aspect-ratio:1/1;border-radius:5px;border:1px solid #0007;
+    cursor:pointer;display:flex;align-items:flex-end;justify-content:flex-end;padding:1px}
+  .sw span{font-size:8px;color:#fff;mix-blend-mode:difference;font-weight:700}
+  .sw.sel{outline:2px solid var(--accent);outline-offset:1px;z-index:1}
+  .row{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}
+  main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:16px;overflow:auto;gap:9px}
+  #wrap{background:#525a66;padding:12px;border-radius:10px;
+    box-shadow:0 10px 50px #000a,0 0 0 1px #ffffff14}
+  canvas{display:block;image-rendering:pixelated;width:min(74vw,760px);aspect-ratio:4/3;cursor:crosshair;
+    border-radius:2px}
+  #status{color:#9fb0c4;font:11.5px ui-monospace,Menlo,Consolas,monospace;min-height:16px;
+    background:#0c0f14;border:1px solid var(--line);border-radius:6px;padding:5px 10px;
+    width:min(74vw,760px);text-align:center;letter-spacing:.2px}
+  .hint{color:var(--dim);font-size:12px;max-width:760px;text-align:center}
+  .chk{display:flex;align-items:center;gap:7px;color:var(--dim);cursor:pointer;user-select:none}
+  textarea{width:100%;height:70px;background:#0a0d11;color:#bfe;border:1px solid var(--line);
+    border-radius:7px;font:11px ui-monospace,monospace;padding:8px;resize:vertical}
+  .mini{font-size:11px;color:var(--dim)}
+  kbd{background:#0a0d11;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;
+    padding:0 5px;font:11px ui-monospace,monospace}
+</style>
+</head>
+<body>
+<header>
+  <h1>APPLE ][ UI DESIGNER (v0.1)</h1>
+  <div class="designbar">
+    <label>Design</label>
+    <select id="designSel" style="min-width:170px"></select>
+    <button class="sm" id="dNew" title="New blank design">New</button>
+    <button class="sm" id="dClone" title="Duplicate this design">Clone</button>
+    <button class="sm" id="dRename">Rename</button>
+    <button class="sm" id="dDelete" title="Delete this design">Delete</button>
+  </div>
+  <span class="spacer"></span>
+  <label class="mini">Mode</label>
+  <select id="mode">
+    <option value="mixed">Mixed Lo-Res (40&times;40 blocks + 4 text lines)</option>
+    <option value="lores">Full Lo-Res (40&times;48 blocks)</option>
+    <option value="text">Full Text (40&times;24 chars)</option>
+  </select>
+</header>
+
+<div id="app">
+  <aside>
+    <h2>Tool</h2>
+    <div class="tools">
+      <button data-tool="paint" class="active">Paint<span class="k">P</span></button>
+      <button data-tool="rect">Rect<span class="k">R</span></button>
+      <button data-tool="fill">Fill<span class="k">F</span></button>
+      <button data-tool="erase">Erase<span class="k">E</span></button>
+      <button data-tool="text">Text<span class="k">T</span></button>
+      <button data-tool="select">Select<span class="k">V</span></button>
+    </div>
+
+    <h2>Edit</h2>
+    <div class="tools" style="margin-bottom:6px">
+      <button id="eUndo" class="sm" title="Undo (Cmd/Ctrl+Z)">&#8630; Undo</button>
+      <button id="eRedo" class="sm" title="Redo (Cmd/Ctrl+Shift+Z)">Redo &#8631;</button>
+    </div>
+    <div class="tools">
+      <button id="eCopy" class="sm">Copy</button>
+      <button id="eCut" class="sm">Cut</button>
+      <button id="ePaste" class="sm">Paste</button>
+      <button id="eDelete" class="sm">Delete</button>
+    </div>
+    <div class="mini" style="margin-top:6px">Select tool: drag a box of blocks. Drag inside it to
+      move. <kbd>&#8984;/Ctrl+C/X/V</kbd>, <kbd>Del</kbd>.</div>
+
+    <h2>Color <span id="colorName" class="mini"></span></h2>
+    <div class="palette" id="palette"></div>
+
+    <h2>Text</h2>
+    <div class="row">
+      <label class="mini" style="flex:none">Block font</label>
+      <select id="bfont" style="flex:1">
+        <option value="mini">Small (3&times;5)</option>
+        <option value="std" selected>Standard (5&times;7)</option>
+        <option value="large">Large (10&times;14)</option>
+      </select>
+    </div>
+    <label class="chk"><input type="checkbox" id="inverse"> Inverse (hardware text)</label>
+    <div class="mini" style="margin-top:6px">Bottom 4 lines = crisp hardware text (one fixed ROM
+      font, like the real machine). Graphics area = block text in the chosen size &amp; colour —
+      the only way to put text there on hardware. Uppercase only; suits <b>S H D C</b>, ten <b>T</b>.</div>
+
+    <h2>Canvas</h2>
+    <label class="chk"><input type="checkbox" id="grid" checked> Show grid</label>
+    <div class="row">
+      <button id="felt" title="Fill the graphics area with table-felt green">Fill felt</button>
+      <button id="clear">Clear</button>
+    </div>
+
+    <h2>Export / Import</h2>
+    <div class="row"><button class="primary" id="png">Save PNG</button>
+      <button class="primary" id="json">Save JSON</button></div>
+    <div class="row"><button id="copy">Copy JSON</button>
+      <button id="import">Open JSON</button></div>
+    <input type="file" id="file" accept="application/json" hidden>
+    <div class="mini" style="margin-top:8px">Designs auto-save to this browser. JSON round-trips a
+      single design to share.</div>
+  </aside>
+
+  <main>
+    <div id="wrap"><canvas id="screen"></canvas></div>
+    <div id="status"></div>
+    <div class="hint">Click any cell and type — bottom 4 lines become hardware text, the graphics
+      area becomes block text. <kbd>&larr;&uarr;&rarr;&darr;</kbd> move, <kbd>Enter</kbd> newline,
+      <kbd>Backspace</kbd> delete.</div>
+    <textarea id="dump" readonly></textarea>
+  </main>
+</div>
+
+<script>
+/* ===== Apple ][ character ROM font (341-0036): 64 glyphs x 8 rows, bit6=left,
+   glyph index = (ascii - 0x40) & 0x3F ===== */
+const FONT_B64="ABwiKi4sIB4ACBQiIj4iIgA8IiI8IiI8ABwiICAgIhwAPCIiIiIiPAA+ICA8ICA+AD4gIDwgICAAHiAgICYiHgAiIiI+IiIiABwICAgICBwAAgICAgIiHAAiJCgwKCQiACAgICAgID4AIjYqKiIiIgAiIjIqJiIiABwiIiIiIhwAPCIiPCAgIAAcIiIiKiQaADwiIjwoJCIAHCIgHAIiHAA+CAgICAgIACIiIiIiIhwAIiIiIiIUCAAiIiIqKjYiACIiFAgUIiIAIiIUCAgICAA+AgQIECA+AD4wMDAwMD4AACAQCAQCAAA+BgYGBgY+AAAACBQiAAAAAAAAAAAAPgAAAAAAAAAAAAgICAgIAAgAFBQUAAAAAAAUFD4UPhQUAAgeKBwKPAgAMDIECBAmBgAQKCgQKiQaAAgICAAAAAAACBAgICAQCAAIBAICAgQIAAgqHAgcKggAAAgIPggIAAAAAAAACAgQAAAAAD4AAAAAAAAAAAAACAAAAgQIECAAABwiJioyIhwACBgICAgIHAAcIgIMECA+AD4CBAwCIhwABAwUJD4EBAA+IDwCAiIcAA4QIDwiIhwAPgIECBAQEAAcIiIcIiIcABwiIh4CBDgAAAAIAAgAAAAAAAgACAgQAAQIECAQCAQAAAA+AD4AAAAQCAQCBAgQABwiBAgIAAg=";
+const FONT=Uint8Array.from(atob(FONT_B64),c=>c.charCodeAt(0));
+
+/* ===== compact 3x5 block font (for small block text); rows top->bottom, bit2=left ===== */
+const MINI={
+ "A":[2,5,7,5,5],"B":[6,5,6,5,6],"C":[3,4,4,4,3],"D":[6,5,5,5,6],"E":[7,4,6,4,7],
+ "F":[7,4,6,4,4],"G":[3,4,5,5,3],"H":[5,5,7,5,5],"I":[7,2,2,2,7],"J":[1,1,1,5,2],
+ "K":[5,5,6,5,5],"L":[4,4,4,4,7],"M":[5,7,7,5,5],"N":[5,7,7,7,5],"O":[2,5,5,5,2],
+ "P":[6,5,6,4,4],"Q":[2,5,5,3,1],"R":[6,5,6,5,5],"S":[3,4,2,1,6],"T":[7,2,2,2,2],
+ "U":[5,5,5,5,7],"V":[5,5,5,5,2],"W":[5,5,7,7,5],"X":[5,5,2,5,5],"Y":[5,5,2,2,2],
+ "Z":[7,1,2,4,7],
+ "0":[7,5,5,5,7],"1":[2,6,2,2,7],"2":[6,1,2,4,7],"3":[7,1,2,1,6],"4":[5,5,7,1,1],
+ "5":[7,4,6,1,6],"6":[3,4,6,5,2],"7":[7,1,2,2,2],"8":[2,5,2,5,2],"9":[3,5,3,1,6],
+ " ":[0,0,0,0,0],".":[0,0,0,0,2],",":[0,0,0,2,4],":":[0,2,0,2,0],"-":[0,0,7,0,0],
+ "+":[0,2,7,2,0],"/":[1,1,2,4,4],"!":[2,2,2,0,2],"?":[6,1,2,0,2],"=":[0,7,0,7,0],
+ "$":[2,7,6,3,2],"'":[2,2,0,0,0],"(":[1,2,2,2,1],")":[4,2,2,2,4],"*":[0,5,2,5,0],
+ "#":[5,7,5,7,5],"%":[5,1,2,4,5],"&":[6,6,7,5,3],";":[0,2,0,2,4],"<":[1,2,4,2,1],
+ ">":[4,2,1,2,4],"@":[2,5,7,4,3],"[":[3,2,2,2,3],"]":[6,2,2,2,6],'"':[5,5,0,0,0],"_":[0,0,0,0,7]
+};
+/* block-text fonts: glyph footprint (w,h) + advance (ax,ay) in blocks */
+const BFONTS={
+  mini :{w:3,h:5,ax:4, ay:6,  label:"Small (3x5)"},
+  std  :{w:5,h:7,ax:6, ay:8,  label:"Standard (5x7)"},
+  large:{w:10,h:14,ax:12,ay:16,label:"Large (10x14)"},
+};
+
+/* ===== Lo-Res palette (index = the colour number you POKE) ===== */
+const PALETTE=[
+  {i:0,name:"BLACK",hex:"#000000"},{i:1,name:"RED",hex:"#c41a3b"},
+  {i:2,name:"DKBLUE",hex:"#3b27b0"},{i:3,name:"PURPLE",hex:"#c63cd6"},
+  {i:4,name:"DKGREEN",hex:"#0e7a35"},{i:5,name:"GRAY",hex:"#7c7c7c"},
+  {i:6,name:"MEDBLUE",hex:"#2f7ef0"},{i:7,name:"LTBLUE",hex:"#6fb4ff"},
+  {i:8,name:"BROWN",hex:"#6b5417"},{i:9,name:"ORANGE",hex:"#e8681b"},
+  {i:10,name:"GRAY2",hex:"#aeaeae"},{i:11,name:"PINK",hex:"#f49ab0"},
+  {i:12,name:"GREEN",hex:"#2fc83a"},{i:13,name:"YELLOW",hex:"#e7e23c"},
+  {i:14,name:"AQUA",hex:"#5ce6b0"},{i:15,name:"WHITE",hex:"#ffffff"},
+];
+
+/* ===== geometry ===== */
+const COLS=40, BLOCKROWS=48, CHARROWS=24, SC=2;
+const BW=7*SC, BH=4*SC, CW=7*SC, CH=8*SC;          /* block 14x8, char 14x16 */
+const W=COLS*BW, H=BLOCKROWS*BH;
+const TXT_NORMAL="#e8efe8";
+function btDims(){ return BFONTS[S.bfont] || BFONTS.std; }
+
+const cv=document.getElementById("screen"), ctx=cv.getContext("2d");
+cv.width=W; cv.height=H;
+
+/* ===== working state ===== */
+const S={ mode:"mixed", tool:"paint", color:15, inverse:false, showGrid:true, bfont:"std",
+  gfx:new Uint8Array(COLS*BLOCKROWS), text:mkText(),
+  cursor:null,      /* hardware-text cursor {r,c} */
+  bcursor:null,     /* block-text cursor {bx,by,startx} */
+  drawing:false, rectStart:null, rectEnd:null,
+  sel:null,         /* selection {x,y,w,h} (blocks) */
+  clip:null,        /* {w,h,data} */
+  move:null,        /* {lifted{w,h,data}, gx, gy} while dragging a selection */
+  lastCell:{r:0,c:0}, blink:false };
+function mkText(){ return Array.from({length:CHARROWS},()=>
+  Array.from({length:COLS},()=>({c:" ",inv:false}))); }
+
+function gfxActive(r){ return S.mode==="lores" || (S.mode==="mixed" && r<40); }
+function textRowActive(tr){ if(S.mode==="text")return true; if(S.mode==="mixed")return tr>=20; return false; }
+function blockIsText(r){ return textRowActive(Math.floor(r/2)); }
+
+/* ===== rendering ===== */
+function drawGlyph(ch,x,y,color){
+  const a=ch.charCodeAt(0); if(a<0x20||a>0x5f) return;
+  const base=((a-0x40)&0x3f)*8; ctx.fillStyle=color;
+  for(let r=0;r<8;r++){ const b=FONT[base+r];
+    for(let c=0;c<7;c++) if((b>>(6-c))&1) ctx.fillRect(x+c*SC, y+r*SC, SC, SC); }
+}
+function render(showGrid=S.showGrid){
+  ctx.clearRect(0,0,W,H);
+  /* a temp gfx view: blocks plus the floating "move" lifted content */
+  for(let r=0;r<BLOCKROWS;r++){
+    if(blockIsText(r)) continue;
+    for(let c=0;c<COLS;c++){
+      ctx.fillStyle = gfxActive(r) ? PALETTE[S.gfx[r*COLS+c]].hex : "#000";
+      ctx.fillRect(c*BW, r*BH, BW, BH);
+    }
+  }
+  if(S.move){ const m=S.move, s=S.sel;
+    for(let y=0;y<m.lifted.h;y++)for(let x=0;x<m.lifted.w;x++){
+      const xx=s.x+x, yy=s.y+y; if(xx<0||xx>=COLS||yy<0||yy>=BLOCKROWS||blockIsText(yy))continue;
+      ctx.fillStyle=PALETTE[m.lifted.data[y*m.lifted.w+x]].hex; ctx.fillRect(xx*BW,yy*BH,BW,BH); } }
+  /* text */
+  for(let tr=0;tr<CHARROWS;tr++){
+    if(!textRowActive(tr)) continue;
+    for(let c=0;c<COLS;c++){
+      const cell=S.text[tr][c], x=c*CW, y=tr*CH;
+      ctx.fillStyle = cell.inv ? "#e9e9e9" : "#000"; ctx.fillRect(x,y,CW,CH);
+      if(cell.c!==" ") drawGlyph(cell.c, x, y, cell.inv?"#000":TXT_NORMAL);
+    }
+  }
+  if(S.tool==="rect" && S.rectStart && S.rectEnd){
+    const a=S.rectStart,b=S.rectEnd;
+    const x0=Math.min(a.c,b.c),x1=Math.max(a.c,b.c),y0=Math.min(a.r,b.r),y1=Math.max(a.r,b.r);
+    ctx.globalAlpha=.6; ctx.fillStyle=PALETTE[S.color].hex;
+    ctx.fillRect(x0*BW,y0*BH,(x1-x0+1)*BW,(y1-y0+1)*BH); ctx.globalAlpha=1;
+  }
+  if(showGrid){
+    ctx.strokeStyle="#ffffff12"; ctx.lineWidth=1;
+    for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*BW+.5,0);ctx.lineTo(c*BW+.5,H);ctx.stroke();}
+    for(let r=0;r<=BLOCKROWS;r++){ctx.beginPath();ctx.moveTo(0,r*BH+.5);ctx.lineTo(W,r*BH+.5);ctx.stroke();}
+    if(S.mode==="mixed"){ctx.strokeStyle="#ffffff55";ctx.beginPath();
+      ctx.moveTo(0,40*BH+.5);ctx.lineTo(W,40*BH+.5);ctx.stroke();}
+  }
+  if(S.sel){ const s=S.sel; ctx.setLineDash([5,3]); ctx.lineWidth=2; ctx.strokeStyle="#ffd24e";
+    ctx.strokeRect(s.x*BW+1,s.y*BH+1,s.w*BW-2,s.h*BH-2); ctx.setLineDash([]); }
+  if(S.cursor){ const {r,c}=S.cursor; ctx.strokeStyle=S.blink?"#4ea1ff":"#ffd24e"; ctx.lineWidth=2;
+    ctx.strokeRect(c*CW+1, r*CH+1, CW-2, CH-2); }
+  if(S.bcursor){ const {bx,by}=S.bcursor, d=btDims(); ctx.strokeStyle=S.blink?"#4ea1ff":"#ffd24e"; ctx.lineWidth=2;
+    ctx.strokeRect(bx*BW, by*BH, d.w*BW, d.h*BH); }
+  updateDump();
+  document.getElementById("ePaste").disabled=!S.clip;
+  ["eCopy","eCut","eDelete"].forEach(id=>document.getElementById(id).disabled=!S.sel);
+}
+function updateDump(){
+  const lines=[];
+  for(let tr=0;tr<CHARROWS;tr++){ if(!textRowActive(tr))continue;
+    let s=""; for(let c=0;c<COLS;c++) s+=S.text[tr][c].c;
+    if(s.trim()!=="") lines.push(String(tr).padStart(2," ")+"| "+s.replace(/\s+$/,"")); }
+  document.getElementById("dump").value = lines.length?
+    "HARDWARE TEXT LINES (row| content):\n"+lines.join("\n") :
+    "(hardware text lines appear here; graphics-area block text is part of the blocks)";
+}
+
+/* ===== block text (graphics-area text drawn as colour blocks) ===== */
+function setBlk(x,y){ if(x>=0&&x<COLS&&y>=0&&y<BLOCKROWS&&gfxActive(y)) S.gfx[y*COLS+x]=S.color; }
+function btStamp(ch){
+  const a=ch.charCodeAt(0); if(a<0x20||a>0x5f) return;
+  const {bx,by}=S.bcursor, d=btDims();
+  if(S.bfont==="mini"){
+    const g=MINI[ch]||MINI[" "];
+    for(let r=0;r<5;r++)for(let c=0;c<3;c++) if((g[r]>>(2-c))&1) setBlk(bx+c, by+r);
+  } else {
+    const s=(S.bfont==="large")?2:1, base=((a-0x40)&0x3f)*8;
+    for(let r=1;r<=7;r++){ const b=FONT[base+r];
+      for(let c=1;c<=5;c++) if((b>>(6-c))&1)
+        for(let dy=0;dy<s;dy++)for(let dx=0;dx<s;dx++) setBlk(bx+(c-1)*s+dx, by+(r-1)*s+dy); }
+  }
+  S.bcursor.bx=Math.min(COLS-d.w, bx+d.ax);
+}
+
+/* ===== mouse ===== */
+function cellFromEvent(e){
+  const rct=cv.getBoundingClientRect();
+  const px=(e.clientX-rct.left)*(W/rct.width), py=(e.clientY-rct.top)*(H/rct.height);
+  return {r:Math.max(0,Math.min(BLOCKROWS-1,Math.floor(py/BH))),
+          c:Math.max(0,Math.min(COLS-1,Math.floor(px/BW)))};
+}
+function paint(cell,ci){ if(gfxActive(cell.r)) S.gfx[cell.r*COLS+cell.c]=ci; }
+function floodFill(cell,ci){
+  if(!gfxActive(cell.r))return; const t=S.gfx[cell.r*COLS+cell.c]; if(t===ci)return;
+  const st=[[cell.r,cell.c]];
+  while(st.length){ const [r,c]=st.pop();
+    if(c<0||c>=COLS||r<0||r>=BLOCKROWS||!gfxActive(r)||S.gfx[r*COLS+c]!==t) continue;
+    S.gfx[r*COLS+c]=ci; st.push([r,c-1],[r,c+1],[r-1,c],[r+1,c]); } }
+function inSel(cell){ const s=S.sel; return s && cell.c>=s.x && cell.c<s.x+s.w && cell.r>=s.y && cell.r<s.y+s.h; }
+
+cv.addEventListener("mousedown",e=>{
+  const cell=cellFromEvent(e), tr=Math.floor(cell.r/2);
+
+  if(S.tool==="select"){
+    if(inSel(cell)){                                  /* start moving the selection */
+      const s=S.sel, data=new Uint8Array(s.w*s.h);
+      for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++){ const yy=s.y+y,xx=s.x+x;
+        data[y*s.w+x]=S.gfx[yy*COLS+xx]; if(gfxActive(yy)) S.gfx[yy*COLS+xx]=0; }
+      S.move={lifted:{w:s.w,h:s.h,data}, gx:cell.c-s.x, gy:cell.r-s.y};
+    } else { S.sel={x:cell.c,y:cell.r,w:1,h:1}; S.drawing=true; S.rectStart=cell; }
+    render(); return;
+  }
+  if(textRowActive(tr) && S.tool!=="rect"){ S.cursor={r:tr,c:cell.c}; S.bcursor=null; render(); return; }
+  if(S.tool==="text"){ S.bcursor={bx:cell.c,by:cell.r,startx:cell.c}; S.cursor=null; render(); return; }
+
+  S.drawing=true;
+  if(S.tool==="paint") paint(cell,S.color);
+  else if(S.tool==="erase") paint(cell,0);
+  else if(S.tool==="fill") floodFill(cell,S.color);
+  else if(S.tool==="rect"){ S.rectStart=cell; S.rectEnd=cell; }
+  render();
+});
+function setInfo(){
+  const p=PALETTE[S.color], cell=S.lastCell;
+  document.getElementById("status").textContent =
+    `${S.tool.toUpperCase()}  ·  color ${p.i} ${p.name}  ·  block font ${S.bfont}  ·  ` +
+    `block (${cell.c},${cell.r})  text r${Math.floor(cell.r/2)} c${cell.c}`;
+}
+cv.addEventListener("mousemove",e=>{
+  const cell=cellFromEvent(e); S.lastCell=cell; setInfo();
+  if(S.move){ S.sel.x=Math.max(0,Math.min(COLS-S.sel.w, cell.c-S.move.gx));
+              S.sel.y=Math.max(0,Math.min(BLOCKROWS-S.sel.h, cell.r-S.move.gy)); render(); return; }
+  if(!S.drawing) return;
+  if(S.tool==="select" && S.rectStart){
+    const a=S.rectStart;
+    S.sel={x:Math.min(a.c,cell.c),y:Math.min(a.r,cell.r),
+           w:Math.abs(cell.c-a.c)+1,h:Math.abs(cell.r-a.r)+1};
+  }
+  else if(S.tool==="paint")paint(cell,S.color);
+  else if(S.tool==="erase")paint(cell,0);
+  else if(S.tool==="rect")S.rectEnd=cell;
+  render();
+});
+window.addEventListener("mouseup",()=>{
+  if(S.move){ const m=S.move,s=S.sel;                /* drop the moved blocks */
+    for(let y=0;y<m.lifted.h;y++)for(let x=0;x<m.lifted.w;x++){ const yy=s.y+y,xx=s.x+x;
+      if(xx<COLS&&yy<BLOCKROWS&&gfxActive(yy)) S.gfx[yy*COLS+xx]=m.lifted.data[y*m.lifted.w+x]; }
+    S.move=null; render(); commit(); return; }
+  if(S.tool==="rect"&&S.rectStart&&S.rectEnd){
+    const a=S.rectStart,b=S.rectEnd;
+    const x0=Math.min(a.c,b.c),x1=Math.max(a.c,b.c),y0=Math.min(a.r,b.r),y1=Math.max(a.r,b.r);
+    for(let r=y0;r<=y1;r++)for(let c=x0;c<=x1;c++) paint({r,c},S.color);
+    S.rectStart=S.rectEnd=null; render();
+  }
+  if(S.drawing){ S.drawing=false; S.rectStart=null; commit(); }
+});
+
+/* ===== selection clipboard ===== */
+function selCopy(){ if(!S.sel)return; const s=S.sel, data=new Uint8Array(s.w*s.h);
+  for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++) data[y*s.w+x]=S.gfx[(s.y+y)*COLS+(s.x+x)];
+  S.clip={w:s.w,h:s.h,data}; render(); }
+function selClear(){ if(!S.sel)return; const s=S.sel;
+  for(let y=0;y<s.h;y++)for(let x=0;x<s.w;x++){ const yy=s.y+y; if(gfxActive(yy)) S.gfx[yy*COLS+(s.x+x)]=0; }
+  render(); commit(); }
+function selCut(){ selCopy(); selClear(); }
+function selPaste(){ if(!S.clip)return; const cl=S.clip, bx=S.sel?S.sel.x:S.lastCell.c, by=S.sel?S.sel.y:S.lastCell.r;
+  for(let y=0;y<cl.h;y++)for(let x=0;x<cl.w;x++){ const xx=bx+x,yy=by+y;
+    if(xx<COLS&&yy<BLOCKROWS&&gfxActive(yy)) S.gfx[yy*COLS+xx]=cl.data[y*cl.w+x]; }
+  S.sel={x:bx,y:by,w:cl.w,h:cl.h}; render(); commit(); }
+document.getElementById("eCopy").onclick=selCopy;
+document.getElementById("eCut").onclick=selCut;
+document.getElementById("ePaste").onclick=selPaste;
+document.getElementById("eDelete").onclick=selClear;
+document.getElementById("eUndo").onclick=undo;
+document.getElementById("eRedo").onclick=redo;
+
+/* ===== keyboard ===== */
+const ALLOWED=/[A-Z0-9 !"#$%&'()*+,\-.\/:;<=>?@\[\\\]^_]/;
+window.addEventListener("keydown",e=>{
+  const tag=e.target.tagName;
+  if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT") return;
+  /* undo / redo */
+  if((e.metaKey||e.ctrlKey)){
+    const k=e.key.toLowerCase();
+    if(k==="z" && e.shiftKey){ redo(); e.preventDefault(); return; }
+    if(k==="z"){ undo(); e.preventDefault(); return; }
+    if(k==="y"){ redo(); e.preventDefault(); return; }
+  }
+  /* clipboard shortcuts (work whenever a selection/clip exists) */
+  if((e.metaKey||e.ctrlKey) && !e.shiftKey){
+    const k=e.key.toLowerCase();
+    if(k==="c"&&S.sel){selCopy();e.preventDefault();return;}
+    if(k==="x"&&S.sel){selCut();e.preventDefault();return;}
+    if(k==="v"&&S.clip){selPaste();e.preventDefault();return;}
+  }
+  if((e.key==="Delete"||e.key==="Backspace") && S.sel && !S.cursor && !S.bcursor){ selClear(); e.preventDefault(); return; }
+
+  if(S.bcursor){                                     /* block text */
+    const b=S.bcursor, d=btDims(); let mut=false;
+    if(e.key==="ArrowLeft") b.bx=Math.max(0,b.bx-d.ax);
+    else if(e.key==="ArrowRight") b.bx=Math.min(COLS-d.w,b.bx+d.ax);
+    else if(e.key==="ArrowUp") b.by=Math.max(0,b.by-d.ay);
+    else if(e.key==="ArrowDown") b.by=Math.min(BLOCKROWS-d.h,b.by+d.ay);
+    else if(e.key==="Enter"){ b.by=Math.min(BLOCKROWS-d.h,b.by+d.ay); b.bx=b.startx; }
+    else if(e.key==="Backspace"){ b.bx=Math.max(0,b.bx-d.ax); }
+    else if(e.key==="Escape"){ S.bcursor=null; }
+    else if(e.key.length===1){ const ch=e.key.toUpperCase(); if(ALLOWED.test(ch)){ btStamp(ch); mut=true; } else return; }
+    else return;
+    e.preventDefault(); render(); if(mut) commit(); return;
+  }
+  if(S.cursor){                                      /* hardware text */
+    const {r,c}=S.cursor; let mut=false;
+    if(e.key==="ArrowLeft") S.cursor.c=Math.max(0,c-1);
+    else if(e.key==="ArrowRight") S.cursor.c=Math.min(COLS-1,c+1);
+    else if(e.key==="ArrowUp"){let t=r-1;while(t>=0&&!textRowActive(t))t--;if(t>=0)S.cursor.r=t;}
+    else if(e.key==="ArrowDown"){let t=r+1;while(t<CHARROWS&&!textRowActive(t))t++;if(t<CHARROWS)S.cursor.r=t;}
+    else if(e.key==="Enter"){let t=r+1;while(t<CHARROWS&&!textRowActive(t))t++;if(t<CHARROWS){S.cursor.r=t;S.cursor.c=0;}}
+    else if(e.key==="Backspace"){ if(c>0){S.cursor.c=c-1;S.text[r][c-1]={c:" ",inv:false};} else S.text[r][c]={c:" ",inv:false}; mut=true; }
+    else if(e.key==="Delete"){S.text[r][c]={c:" ",inv:false}; mut=true;}
+    else if(e.key==="Escape"){S.cursor=null;}
+    else if(e.key.length===1){ const ch=e.key.toUpperCase();
+      if(ALLOWED.test(ch)){S.text[r][c]={c:ch,inv:S.inverse};S.cursor.c=Math.min(COLS-1,c+1); mut=true;} else return; }
+    else return;
+    e.preventDefault(); render(); if(mut) commit();
+    return;
+  }
+  /* tool shortcuts (only when not typing) */
+  if(!(e.metaKey||e.ctrlKey||e.altKey)){
+    const m={p:"paint",r:"rect",f:"fill",e:"erase",t:"text",v:"select",s:"select"}[e.key.toLowerCase()];
+    if(m){ setTool(m); e.preventDefault(); }
+    else if(e.key==="Escape"){ S.sel=S.move=S.cursor=S.bcursor=null; render(); }
+  }
+});
+setInterval(()=>{ if(S.cursor||S.bcursor){S.blink=!S.blink; render();} },500);
+
+/* ===== palette + tools ===== */
+const pal=document.getElementById("palette");
+PALETTE.forEach(p=>{ const d=document.createElement("div");
+  d.className="sw"+(p.i===S.color?" sel":""); d.style.background=p.hex;
+  d.title=`${p.i} ${p.name}`; d.innerHTML=`<span>${p.i}</span>`;
+  d.onclick=()=>{S.color=p.i; document.querySelectorAll(".sw").forEach(x=>x.classList.remove("sel"));
+    d.classList.add("sel"); document.getElementById("colorName").textContent=`${p.i} ${p.name}`; setInfo();};
+  pal.appendChild(d); });
+document.getElementById("colorName").textContent=`${S.color} ${PALETTE[S.color].name}`;
+function setTool(name){ S.tool=name;
+  document.querySelectorAll("[data-tool]").forEach(x=>x.classList.toggle("active",x.dataset.tool===name));
+  if(name!=="select") S.sel=S.move=null;
+  if(name!=="text"){ S.cursor=null; S.bcursor=null; }
+  setInfo(); render(); }
+document.querySelectorAll("[data-tool]").forEach(b=>{ b.onclick=()=>setTool(b.dataset.tool); });
+document.getElementById("bfont").onchange=e=>{S.bfont=e.target.value; setInfo(); render();};
+document.getElementById("inverse").onchange=e=>S.inverse=e.target.checked;
+document.getElementById("grid").onchange=e=>{S.showGrid=e.target.checked;render();};
+document.getElementById("mode").onchange=e=>{S.mode=e.target.value;
+  if(!textRowActive(S.cursor?.r??-1))S.cursor=null; render(); commit();};
+document.getElementById("felt").onclick=()=>{
+  for(let r=0;r<BLOCKROWS;r++) if(gfxActive(r)) for(let c=0;c<COLS;c++) S.gfx[r*COLS+c]=4;
+  render(); commit();};
+document.getElementById("clear").onclick=()=>{ S.gfx.fill(0); S.text=mkText();
+  S.cursor=S.bcursor=S.sel=null; render(); commit();};
+
+/* ===== design data <-> state ===== */
+function captureData(){
+  const gfx=[]; for(let r=0;r<BLOCKROWS;r++){const row=[];for(let c=0;c<COLS;c++)row.push(S.gfx[r*COLS+c]);gfx.push(row);}
+  const text=[];
+  for(let tr=0;tr<CHARROWS;tr++){ let chars="",inv="";
+    for(let c=0;c<COLS;c++){chars+=S.text[tr][c].c;inv+=S.text[tr][c].inv?"1":"0";}
+    if(chars.trim()!==""||inv.includes("1")) text.push({row:tr,chars,inverse:inv}); }
+  return {mode:S.mode, gfx, text};
+}
+function applyData(d){
+  S.mode=d.mode||"mixed"; document.getElementById("mode").value=S.mode;
+  S.gfx.fill(0);
+  if(d.gfx) for(let r=0;r<BLOCKROWS;r++)for(let c=0;c<COLS;c++) S.gfx[r*COLS+c]=(d.gfx[r]&&d.gfx[r][c])||0;
+  S.text=mkText();
+  if(d.text) d.text.forEach(t=>{for(let c=0;c<COLS&&c<t.chars.length;c++)
+    S.text[t.row][c]={c:t.chars[c].toUpperCase(),inv:t.inverse&&t.inverse[c]==="1"};});
+  S.cursor=S.bcursor=S.sel=S.move=null;
+}
+
+/* ===== multi-design store ===== */
+const LS="a2ui:v2"; let DB={current:null,order:[],designs:{}};
+function loadDB(){ try{const r=localStorage.getItem(LS); if(r) DB=JSON.parse(r);}catch{} }
+function saveDB(){ try{localStorage.setItem(LS,JSON.stringify(DB));}catch{} }
+function uid(){ return "d"+Math.random().toString(36).slice(2,9); }
+function feltData(){ const d={mode:"mixed",gfx:[],text:[]};
+  for(let r=0;r<BLOCKROWS;r++){const row=[];for(let c=0;c<COLS;c++)row.push(r<40?4:0);d.gfx.push(row);} return d; }
+function refreshDesignSel(){ const sel=document.getElementById("designSel"); sel.innerHTML="";
+  DB.order.forEach(id=>{ const o=document.createElement("option");
+    o.value=id; o.textContent=DB.designs[id].name; if(id===DB.current)o.selected=true; sel.appendChild(o); }); }
+function saveCurrent(){ if(!DB.current)return;
+  DB.designs[DB.current].data=captureData(); DB.designs[DB.current].updated=Date.now(); saveDB(); }
+
+/* ===== undo / redo (snapshot history of the current design) ===== */
+const HIST_CAP=80; let history=[], hi=-1;
+function histReset(){ history=[captureData()]; hi=0; updHistBtns(); }
+function commit(){                                   /* call after each mutating action */
+  saveCurrent();
+  history=history.slice(0,hi+1);
+  history.push(captureData());
+  if(history.length>HIST_CAP) history.shift();
+  hi=history.length-1; updHistBtns();
+}
+function restoreHist(){ applyData(history[hi]); saveCurrent(); setInfo(); render(); updHistBtns(); }
+function undo(){ if(hi>0){ hi--; restoreHist(); } }
+function redo(){ if(hi<history.length-1){ hi++; restoreHist(); } }
+function updHistBtns(){ const u=document.getElementById("eUndo"), r=document.getElementById("eRedo");
+  if(u) u.disabled=hi<=0; if(r) r.disabled=hi>=history.length-1; }
+function openDesign(id){ if(!DB.designs[id])return; DB.current=id; applyData(DB.designs[id].data);
+  refreshDesignSel(); saveDB(); histReset(); render(); }
+function newDesign(name,data){ const id=uid();
+  DB.designs[id]={name:name||("Untitled "+(DB.order.length+1)), data:data||feltData(), updated:Date.now()};
+  DB.order.push(id); DB.current=id; saveDB(); applyData(DB.designs[id].data); refreshDesignSel(); histReset(); render(); }
+document.getElementById("designSel").onchange=e=>{ saveCurrent(); openDesign(e.target.value); };
+document.getElementById("dNew").onclick=()=>{ saveCurrent(); newDesign(); };
+document.getElementById("dClone").onclick=()=>{ saveCurrent(); const cur=DB.designs[DB.current];
+  newDesign(cur.name+" copy", JSON.parse(JSON.stringify(cur.data))); };
+document.getElementById("dRename").onclick=()=>{ const cur=DB.designs[DB.current];
+  const n=prompt("Design name:",cur.name); if(n){cur.name=n.trim()||cur.name; saveDB(); refreshDesignSel();} };
+document.getElementById("dDelete").onclick=()=>{ if(DB.order.length<=1){alert("Keep at least one design.");return;}
+  if(!confirm("Delete \""+DB.designs[DB.current].name+"\"?"))return;
+  const i=DB.order.indexOf(DB.current); delete DB.designs[DB.current]; DB.order.splice(i,1);
+  openDesign(DB.order[Math.max(0,i-1)]); };
+
+/* ===== export / import ===== */
+function serialize(){ return {tool:"apple2-ui-designer",version:2,name:DB.designs[DB.current]?.name||"design",
+  cols:COLS,blockRows:BLOCKROWS,palette:PALETTE, ...captureData()}; }
+function download(name,blob){ const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+document.getElementById("png").onclick=()=>{ render(false); cv.toBlob(b=>{download("apple2-ui.png",b);render();}); };
+document.getElementById("json").onclick=()=>
+  download("apple2-ui.json",new Blob([JSON.stringify(serialize(),null,1)],{type:"application/json"}));
+document.getElementById("copy").onclick=async()=>{ try{await navigator.clipboard.writeText(JSON.stringify(serialize()));
+  document.getElementById("status").textContent="JSON copied ✓";}catch{document.getElementById("status").textContent="Copy failed — use Save JSON";} };
+document.getElementById("import").onclick=()=>document.getElementById("file").click();
+document.getElementById("file").onchange=e=>{ const f=e.target.files[0]; if(!f)return;
+  const rd=new FileReader(); rd.onload=()=>{ try{const d=JSON.parse(rd.result);
+    saveCurrent(); newDesign((d.name||"imported"), {mode:d.mode,gfx:d.gfx,text:d.text});
+  }catch(err){alert("Bad JSON: "+err);} }; rd.readAsText(f); };
+
+/* ===== boot ===== */
+loadDB();
+if(!DB.order.length || !DB.current || !DB.designs[DB.current]){
+  DB={current:null,order:[],designs:{}}; newDesign("Untitled 1");
+} else { applyData(DB.designs[DB.current].data); }
+refreshDesignSel(); histReset(); setInfo(); render();
+</script>
+</body>
+</html>
