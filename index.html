@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Apple ][ UI Designer</title>
+<title>Mockingbyte — Apple ][ UI mockups</title>
 <style>
   :root{ --bg:#0f1115; --panel:#171b21; --panel2:#222831; --line:#2c333d;
     --txt:#e4e9ef; --dim:#828d9c; --accent:#5aa6ff; --accent2:#2a5e8c; }
@@ -65,7 +65,7 @@
 </head>
 <body>
 <header>
-  <h1>APPLE ][ UI DESIGNER (v0.1)</h1>
+  <h1>MOCKINGBYTE <span style="color:var(--dim);font-weight:500;letter-spacing:.3px">v0.1 · Apple ][ UI mockups</span></h1>
   <div class="designbar">
     <label>Design</label>
     <select id="designSel" style="min-width:170px"></select>
@@ -542,13 +542,13 @@ document.getElementById("dDelete").onclick=()=>{ if(DB.order.length<=1){alert("K
   openDesign(DB.order[Math.max(0,i-1)]); };
 
 /* ===== export / import ===== */
-function serialize(){ return {tool:"apple2-ui-designer",version:2,name:DB.designs[DB.current]?.name||"design",
+function serialize(){ return {tool:"mockingbyte",version:2,name:DB.designs[DB.current]?.name||"design",
   cols:COLS,blockRows:BLOCKROWS,palette:PALETTE, ...captureData()}; }
 function download(name,blob){ const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
-document.getElementById("png").onclick=()=>{ render(false); cv.toBlob(b=>{download("apple2-ui.png",b);render();}); };
+document.getElementById("png").onclick=()=>{ render(false); cv.toBlob(b=>{download("mockingbyte.png",b);render();}); };
 document.getElementById("json").onclick=()=>
-  download("apple2-ui.json",new Blob([JSON.stringify(serialize(),null,1)],{type:"application/json"}));
+  download("mockingbyte.json",new Blob([JSON.stringify(serialize(),null,1)],{type:"application/json"}));
 document.getElementById("copy").onclick=async()=>{ try{await navigator.clipboard.writeText(JSON.stringify(serialize()));
   document.getElementById("status").textContent="JSON copied ✓";}catch{document.getElementById("status").textContent="Copy failed — use Save JSON";} };
 document.getElementById("import").onclick=()=>document.getElementById("file").click();

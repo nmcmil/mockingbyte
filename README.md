@@ -1,11 +1,16 @@
-# Apple ][ UI Designer
+# Mockingbyte
 
-A tiny, **single-file, zero-dependency** tool for mocking up Apple ][ screens the way the
-real hardware actually allows — a 40-column Lo-Res block grid with the authentic 16-colour
-palette, mixed-mode text lines, uppercase-only text, and PNG/JSON export.
+**Draw Apple ][ user interfaces, the way the hardware actually allows.**
 
-It was built to design the *JOKERS WILD* card table, but it's standalone — open it in any
-browser, no install, works offline, and you can hand the whole folder to anyone.
+Mockingbyte is a tiny, **single-file, zero-dependency** browser tool for mocking up Apple ][
+screens — a 40-column Lo-Res block grid with the authentic 16-colour palette, the real
+character-ROM font, true 4:3 non-square-pixel aspect, mixed-mode text lines, uppercase-only
+text, and PNG/JSON export.
+
+Standalone — open it in any browser, no install, works offline, and you can hand the whole
+folder to anyone.
+
+**Try it:** https://nmcmil.github.io/appleiiuidesigner/
 
 ## Use it
 
@@ -89,7 +94,7 @@ The readable text box at the bottom always shows your text lines as `row| conten
 
 ```json
 {
-  "tool": "apple2-ui-designer", "version": 1,
+  "tool": "mockingbyte", "version": 2,
   "mode": "mixed", "cols": 40, "blockRows": 48,
   "palette": [{ "i": 0, "name": "BLACK", "hex": "#000000" }, ...],
   "gfx":  [[ /* 40 colour indices */ ], ... 48 rows ],
