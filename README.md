@@ -10,8 +10,8 @@ text, and PNG/JSON export.
 Standalone — open it in any browser, no install, works offline, and you can hand the whole
 folder to anyone.
 
-**Try it:** https://nmcmil.github.io/Mockingbyte/ &nbsp;·&nbsp;
-**Source:** https://github.com/nmcmil/Mockingbyte
+**Try it:** https://nmcmil.github.io/mockingbyte/ &nbsp;·&nbsp;
+**Source:** https://github.com/nmcmil/mockingbyte
 
 ## Use it
 
