@@ -10,7 +10,8 @@ text, and PNG/JSON export.
 Standalone — open it in any browser, no install, works offline, and you can hand the whole
 folder to anyone.
 
-**Try it:** https://nmcmil.github.io/appleiiuidesigner/
+**Try it:** https://nmcmil.github.io/Mockingbyte/ &nbsp;·&nbsp;
+**Source:** https://github.com/nmcmil/Mockingbyte
 
 ## Use it
 
