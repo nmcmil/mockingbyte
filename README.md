@@ -39,8 +39,8 @@ any static server.)
   ("block text") — exactly how the game draws rank/suit on the cards, and the only way to put
   text in the graphics region on a real Apple ][. Block text is chunkier and uses your
   selected colour; the contrast between the two makes the hardware limit obvious.
-- **Text is UPPERCASE only** (the ][+ character ROM has no lowercase). Suits are letters
-  **S H D C**, ten is **T**. Inverse (black-on-white) is supported for highlights.
+- **Text is UPPERCASE only** (the ][+ character ROM has no lowercase). Inverse
+  (black-on-white) is supported for highlights.
 
 ## Designs
 
